@@ -11,9 +11,9 @@ class Body : public KinematicBody {
     GODOT_CLASS(Body, KinematicBody)
 
 private:
-    float time;
-    float speed;
+    Vector3 velocity;
 
+    float elasticity;
 public:
     static void _register_methods();
 

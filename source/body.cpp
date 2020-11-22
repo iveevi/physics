@@ -2,29 +2,32 @@
 
 using namespace godot;
 
-void Body::_register_methods() {
+void Body::_register_methods()
+{
     register_method("_process", &Body::_process);
 
-    register_property <Body, float> ("speed", &Body::speed, 0.01);
+    register_property <Body, float> ("elasticity", &Body::elasticity, 0.6);
 }
 
-Body::Body() {
+Body::Body()
+{
+	velocity = Vector3(0, 0, 0);
 }
 
-Body::~Body() {
-    // add your cleanup here
+Body::~Body()
+{
 }
 
-void Body::_init() {
-    // initialize any variables here
-    time = 0.0;
+void Body::_init()
+{
+	elasticity = 0.6;
 }
 
-void Body::_process(float delta) {
-    time += delta;
+void Body::_process(float delta)
+{
+	velocity += Vector3(0, -0.00001, 0);
 
-    Godot::print("Body!");
-    Vector3 new_position = Vector3(-0.01, -speed, 0);
-    
-    move_and_collide(new_position);
+	auto obj = move_and_collide(velocity);
+	if (obj.ptr())
+		velocity *= -elasticity;
 }
