@@ -11,6 +11,8 @@ export (float) var k;
 export (float) var r;
 
 export (float) var air;
+export (float) var fs;
+export (float) var fk;
 
 var point_mass = 0;
 
@@ -35,7 +37,7 @@ func _ready():
 			
 			particle.transform.origin = transform.origin + Vector3(i * wi - wi * width / 2, 0, j * li - li * length/2);
 			
-			particle.pt_mass = point_mass;
+			# particle.pt_mass = point_mass;
 			
 			pt.append(particle);
 			
@@ -72,6 +74,54 @@ func _ready():
 	print(sheet_v);
 	print(sheet_h);
 
+# Body variables
+var scl = 0.002;
+
+# Spring model
+func model(diff):
+	var d = diff.length();
+	
+	if d > r:
+		return k * (d - r) * diff.normalized();
+	
+	return Vector3(0, 0, 0);
+
+# Kernel
+func kernel(pt, delta):
+	# Kernel function
+	var force = Vector3(0, 0, 0);
+	
+	# if pt.get_slide_count() == 0:
+	#	force += air * pow(pt.velocity.length(), 2) * pt.velocity.normalized();
+	
+	for obj in pt.neighbors:
+		var diff = obj.transform.origin - pt.transform.origin;
+		
+		# print(str(diff) + "\t" + str(diff.length()));
+		force += model(diff);
+	
+	force -= Vector3(0, 9.81 * point_mass, 0);
+	
+	if pt.get_slide_count() > 0:
+		force += Vector3(0, 9.81 * point_mass, 0);
+		if force.length() > 9.81 * point_mass * fs:
+			force -= (fk * 9.81 * point_mass) * force.normalized();
+		elif force.length() < 1e-9 and pt.velocity.length() > 0:
+			force -= (fk * 9.81 * point_mass) * pt.velocity.normalized();
+		else:
+			force = Vector3(0, 0, 0);
+	
+	pt.velocity += scl * (force/point_mass);
+	
+	pt.move_and_slide(pt.velocity);
+
+# Physics
+func _physics_process(delta):
+	for i in range(0, width):
+		for j in range(0, length):
+			kernel(points[i][j], delta);
+
+# Redraw the sheet
 func _process(delta):
 	for i in range(0, width):
 		sheet_h[i].clear();
